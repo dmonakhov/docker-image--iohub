@@ -1,0 +1,43 @@
+
+apiVertion: v1
+kind: Service
+metadata:
+  name: {{ JOB_NAME }}-iohub-cvc
+  labels:
+    name: {{ JOB_NAME }}-iohub-cvc
+    group: {{ JOB_GROUP }}
+
+spec:
+  type: NodePort
+  ports:
+    - port: 22
+      name: ssh
+  selector:
+    name: {{ JOB_NAME }}-iohub
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    name: {{ JOB_NAME }}-iohub
+    group: {{ JOB_GROUP }}
+  name: {{ JOB_NAME }}-iohub
+spec:
+  containers:
+  - image: {{ JOB_IMGAGE }}
+    name: {{ JOB_NAME }}-iohub
+    ports:
+      - containerPort: 22
+    env:
+      - name: SSH_KEY
+        value: /root/.ssh/id_rsa
+    volumeMounts:
+    - mountPath: /root/.ssh
+      name: ssh-keys
+      readOnly: true
+  volumes:
+  - name: ssh-keys
+    secret:
+      secretName: {{ JOB_SSH_SECRET }}
+      defaultMode: 256
