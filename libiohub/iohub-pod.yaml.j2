@@ -2,9 +2,9 @@
 apiVertion: v1
 kind: Service
 metadata:
-  name: {{ JOB_NAME }}-iohub-cvc
+  name: iohub-{{ JOB_NAME }}
   labels:
-    name: {{ JOB_NAME }}-iohub-cvc
+    name: iohub-svc-{{ JOB_NAME }}
     group: {{ JOB_GROUP }}
 
 spec:
@@ -13,20 +13,20 @@ spec:
     - port: 22
       name: ssh
   selector:
-    name: {{ JOB_NAME }}-iohub
+    name: iohub-{{ JOB_NAME }}
 
 ---
 apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    name: {{ JOB_NAME }}-iohub
+    name: iohub-{{ JOB_NAME }}
     group: {{ JOB_GROUP }}
-  name: {{ JOB_NAME }}-iohub
+  name: iohub-{{ JOB_NAME }}
 spec:
   containers:
-  - image: {{ JOB_IMGAGE }}
-    name: {{ JOB_NAME }}-iohub
+  - image: {{ JOB_IMAGE }}
+    name: iohub-{{ JOB_NAME }}
     ports:
       - containerPort: 22
     env:
@@ -35,7 +35,7 @@ spec:
     volumeMounts:
     - mountPath: /root/.ssh
       name: ssh-keys
-      readOnly: true
+      readOnly: false
   volumes:
   - name: ssh-keys
     secret:

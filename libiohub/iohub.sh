@@ -1,15 +1,15 @@
-#! /bin/sh
+#! /bin/bash
 
-IOHUB_TEMPLATE=$DIR/iohub.pod.j2
+IOHUB_TEMPLATE=$DIR/iohub-pod.yaml.j2
 
-KUBECTL=
-ADMIN_KEY="~/.ssh/id_rsa.pub"
+KUBECTL="kubectl"
+#ADMIN_KEY=~/.ssh/id_rsa.pub
 IMAGE="dmonakhov/iohub"
-
 
 function gen_id
 {
-	uuidgen --time
+	dhash=`date +%F-%s-%N | sha256sum`;
+	echo ${dhash:0:8}
 }
 
 function gen_ssh_key
@@ -28,9 +28,6 @@ function gen_ssh_key
 	
 }
 
-function gen_authorized
-{}
-
 function create_ssh_secret
 {
 	local key=$1
@@ -38,9 +35,11 @@ function create_ssh_secret
 	local ak_tmpl=$3
 	local akeys=`mktemp /tmp/XXXXXXX.authorized_keys`
 	if test -n "$ak_tmpl"; then
+	    stat $ak_tmpl
+	    exit 1
 	    cat $ak_tmpl > $akeys
 	fi
-	cat $key.pub >> $akeys
+	cat ${key}.pub >> $akeys
 	
 	$KUBECTL create secret generic $secname \
 		 --from-file=id_rsa=$key --from-file=id_rsa.pub=$key.pub \
@@ -70,7 +69,7 @@ function gen_job
 	echo "JOB_GROUP=iohub-bot" >> $env
 	echo "JOB_SSH_SECRET=$key" >> $env
 	echo "JOB_IMAGE=$IMAGE" >> $env
-	j2 --format=env $tmpl  > $jobfile
+	j2 --format=env $tmpl $env  > $jobfile
 	unlink $env
 }
 
@@ -82,7 +81,7 @@ function create_iohub
 	mkdir -p $wdir
 	gen_ssh_key $wdir/key
 	create_ssh_secret $wdir/key sshkey-$job_id $ADMIN_KEY
-	gen_job $job_id $wdir/key $wdir/iohub-pod.yaml
+	gen_job $job_id sshkey-$job_id $wdir/iohub-pod.yaml
 	$KUBECTL create -f $wdir/iohub-pod.yaml
 }
 
